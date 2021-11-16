@@ -215,7 +215,6 @@ species guests skills: [moving]{
 		distance<-distance+1;
 		write "Distance traveled so far - " +distance;
 		do goto target:pointl;
-		
 		if(location=tavern[0].location or location=tavern[1].location){
 			write guestName + ': I have reached tavern and drank and eaten. Time to party!';
 			ask tavern{
