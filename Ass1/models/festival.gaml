@@ -20,13 +20,18 @@ global {
 		create tavern with:(location:point (15,15));
 		create tavern with:(location:point (60,60));
 		create pub with:(location:point (90,90));
-		create pub with:(location:point (30,30));		
+		create pub with:(location:point (30,30));
+		create foodstall with:(location:point (75,75));	
+		create foodstall with:(location:point (95,95));		
 		create guests number:noguests
 		{
 		 isthirsty<-rnd(100);
 		 ishungry<-rnd(100);
 		 pointl<-nil;
-		 sos<-false;
+		 foodbrain<-nil;
+		 pubbrain<-nil;
+		 tavernbrain<-nil;
+		 atinfocentre<-false;
 		}
 		
 		loop counter from:1 to:noguests{
@@ -45,7 +50,12 @@ species guests skills: [moving]{
 	
 	int isthirsty;
 	int ishungry;
-	bool sos;
+	int r;
+	list<int> foodbrain;
+	list<int> pubbrain;
+	list<int> tavernbrain;
+	
+	bool atinfocentre;
 	point pointl;
 	string guestName<-'undefined';
 	point target<-{15,15};
@@ -78,50 +88,89 @@ species guests skills: [moving]{
 	
 	reflex enjoy_the_festival when:(isthirsty!=0 and ishungry!=0)
 	{
-		write ishungry;
-		write isthirsty;
+
 		do wander;
 		isthirsty<-isthirsty-1;
-		ishungry<-ishungry-1;	
+		ishungry<-ishungry-1;
+		if (isthirsty<=0 and ishungry<=0) {
+			write guestName+ ' im thirsty and hungry - on way to information centre';
+		} else if (isthirsty<=0) {
+			write guestName+ ' im thirsty - on way to information centre';
+		} else if (ishungry<=0) {
+			write guestName+ ' im hungry - on way to information centre';
+		}
 	}
 	
-	reflex ifthirstyaorishungry when:((isthirsty<=0 or ishungry<=0) and sos=false) {
+	reflex ifthirstyaorishungry when:((isthirsty<=0 or ishungry<=0) and atinfocentre=false) {
 		
 		do goto target:{50,50};
-		write location;	
+		
+
 		if (location={50,50}){
-			write 'im here';
-			sos<-true;
+			write 'im at infocentre';
+			atinfocentre<-true;
 			
 		}	
 		}
 		
 		
-	reflex ifsostrue when: (sos=true and pointl=nil){
-		
-		if(isthirsty<=0 or ishungry<=0){
+	reflex ifatinfocentretrue when: (atinfocentre=true and pointl=nil){
+		r<-rnd(0,1);
+		if(isthirsty<=0 and ishungry<=0){
 			write guestName+ ' : im hungry and is thirsty';
 			ask infocentre{
-				myself.pointl<-{25,25};
+				myself.pointl<-tavern[myself.r].location;
 			}
 			
 		}
 		
+		else if (isthirsty<=0){
+			write guestName+ ' : im thirsty';
+			ask infocentre{
+				myself.pointl<-pub[myself.r].location;
+			}
+		}
+		
+		else if (ishungry<=0){
+			write guestName+ ' : im hungry';
+			ask infocentre{
+				myself.pointl<-foodstall[myself.r].location;
+			}
+		}
 	}
 	
 	reflex gototarget when: (pointl!=nil){
 		do goto target:pointl;
 		write "on the way";
 		
-		if(location={25,25}){
+		if(location=tavern[0].location or location=tavern[1].location){
 			write 'what would u like to have';
 			ask tavern{
 				myself.ishungry<-100;
 				myself.isthirsty<-100;
 				myself.pointl<-nil;
-				myself.sos<-false;
+				myself.atinfocentre<-false;
 			}
 		}
+		
+		if(location=foodstall[0].location or location=foodstall[1].location){
+			write 'what would u like to have';
+			ask foodstall{
+				myself.ishungry<-100;
+				myself.pointl<-nil;
+				myself.atinfocentre<-false;
+			}
+		}
+		if(location=pub[0].location or location=pub[1].location){
+			write 'what would u like to have';
+			ask pub{
+				myself.isthirsty<-100;
+				myself.pointl<-nil;
+				myself.atinfocentre<-false;
+			}
+		}
+		
+		
 	}
 		
 	
@@ -143,16 +192,24 @@ species infocentre{
 species tavern{
 	
 	aspect base{
-		draw square(4) at: location color: #yellow;
+		draw rectangle(7,4) at: location color: #yellow;
 	}
 }
 
 species pub{
 	
 	aspect base{
-		draw square(4) at: location color: #pink;
+		draw rectangle(5,3) at: location color: #pink;
 	}
 }
+
+species foodstall{
+	
+	aspect base{
+		draw rectangle(5,3) at: location color: #skyblue;
+	}
+}
+
 
 experiment exp type: gui {
 
@@ -170,6 +227,7 @@ output {
 			species infocentre aspect:base;
 			species tavern aspect:base;
 			species pub aspect:base;
+			species foodstall aspect:base;
 		}
 }
 }
