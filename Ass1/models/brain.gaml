@@ -13,7 +13,6 @@ model brain
 global {
 	
 	int noguests<-3;
-	int notaverns<-2;
 	
 	init {
 		create infocentre;
@@ -33,6 +32,7 @@ global {
 		 tavernbrain<-nil;
 		 atinfocentre<-false;
 		 useBrain<-0;
+		 distance<-0;
 		}
 		
 		loop counter from:1 to:noguests{
@@ -44,9 +44,6 @@ global {
 	
 	}
 	
-	
-
-
 species guests skills: [moving]{
 	
 	int isthirsty;
@@ -58,6 +55,7 @@ species guests skills: [moving]{
 	int useBrain;
 	bool atinfocentre;
 	point pointl;
+	int distance;
 	string guestName<-'undefined';
 	point target<-{15,15};
 	
@@ -94,11 +92,11 @@ species guests skills: [moving]{
 		isthirsty<-isthirsty-1;
 		ishungry<-ishungry-1;
 		if (isthirsty<=0 and ishungry<=0) {
-			write guestName+ ' im thirsty and hungry - on way to information centre';
+			write guestName+ ' Im thirsty and hungry';
 		} else if (isthirsty<=0) {
-			write guestName+ ' im thirsty - on way to information centre';
+			write guestName+ ' Im thirsty';
 		} else if (ishungry<=0) {
-			write guestName+ ' im hungry - on way to information centre';
+			write guestName+ ' Im hungry';
 		}
 	}
 	
@@ -107,54 +105,61 @@ species guests skills: [moving]{
 		if (isthirsty<=0 and ishungry<=0) {
 			// if tavernbrain has no value, go to info center
 			if (tavernbrain = []) {
-				write guestName+ " tavernbrain is nil - going to info centre";
+				write guestName+ " tavernbrain is empty - going to info centre to find a tavern";
+				distance<-distance+1;
+				write "Distance traveled so far - " +distance;
 				do goto target:{50,50};
 			} else {
 				// if tavernbrain has value, randomly choose between brain or info centre
 				// Go to tavern or info centre
+				
 				useBrain<-rnd(0, 1);
 				if (useBrain = 1) {
-					write guestName+ " brain is available and I'm using it";		
-					atinfocentre<-true;		
+					write guestName+ " tavernbrain has some values and I'm using them to go";		
+					atinfocentre<-true;
+					distance<-distance+1;
+					write "Distance traveled so far - " +distance;
 					do goto target:tavern[tavernbrain[rnd(0,length(tavernbrain)-1)]].location;				
 				} else {
-					write guestName+ " brain is available but i'm not using it - going to info centre";
+					write guestName+ " tavernbrain has some values but I want to find something new - going to info centre";
+					distance<-distance+1;
+					write "Distance traveled so far - " +distance;
 					do goto target:{50,50};
 				}
 			}
 		} else if (isthirsty<=0) {
 			// if pubbrain has no value, go to info center
 			if (pubbrain = []) {
-				write guestName+ " pubbrain is nil - going to info centre";
+				write guestName+ " pubbrain is empty - going to info centre to find a tavern";
 				do goto target:{50,50};
 			} else {
 				// if pubbrain has value, randomly choose between brain or info centre
 				// Go to pub or info centre
 				useBrain<-rnd(0, 1);
 				if (useBrain = 1) {
-					write guestName+ " brain is available and I'm using it";
+					write guestName+ " pubbrain has some values and I'm using them to go";
 					atinfocentre<-true;
 					do goto target:pub[pubbrain[rnd(0,length(pubbrain)-1)]].location;				
 				} else {
-					write guestName+ " brain is available but i'm not using it - going to info centre";
+					write guestName+ " pubbrain has some values but I want to find something new - going to info centre";
 					do goto target:{50,50};
 				}
 			}
 		} else if (ishungry<=0) {
 			// if foodbrain has no value, go to info center
 			if (foodbrain = []) {
-				write guestName+ " foodbrain is nil - going to info centre";
+				write guestName+ " foodbrain is empty - going to info centre to find a tavern";
 				do goto target:{50,50};
 			} else {
 				// if foodbrain has value, randomly choose between brain or info centre
 				// Go to foodstall or info centre
 				useBrain<-rnd(0, 1);
 				if (useBrain = 1) {
-					write guestName+ " brain is available and I'm using it";
+					write guestName+ " foodbrain has some values and I'm using them to go";
 					atinfocentre<-true;
 					do goto target:foodstall[foodbrain[rnd(0,length(foodbrain)-1)]].location;				
 				} else {
-					write guestName+ " brain is available but i'm not using it - going to info centre";
+					write guestName+ " foodbrain has some values but I want to find something new - going to info centre";
 					do goto target:{50,50};
 				}
 			}
@@ -164,7 +169,7 @@ species guests skills: [moving]{
 		
 
 		if (location={50,50}){
-			write 'im at infocentre';
+			write guestName + 'i have reached the info centre';
 			atinfocentre<-true;
 		}
 	}
@@ -177,7 +182,10 @@ species guests skills: [moving]{
 			ask infocentre{
 				myself.pointl<-tavern[myself.r].location;
 			}
-			add r to: tavernbrain;	
+			if !(tavernbrain contains r) {
+				write "Found a new tavern, adding to my brain";
+				add r to: tavernbrain;
+			}
 		}
 		
 		else if (isthirsty<=0){
@@ -185,7 +193,10 @@ species guests skills: [moving]{
 			ask infocentre{
 				myself.pointl<-pub[myself.r].location;
 			}
-			add r to: pubbrain;
+			if !(pubbrain contains r) {
+				write "Found a new pub, adding to my brain";
+				add r to: pubbrain;
+			}
 		}
 		
 		else if (ishungry<=0){
@@ -193,20 +204,20 @@ species guests skills: [moving]{
 			ask infocentre{
 				myself.pointl<-foodstall[myself.r].location;
 			}
-			add r to: foodbrain;
+			if !(foodbrain contains r) {
+				write "Found a new foodstall, adding to my brain";
+				add r to: foodbrain;
+			}
 		}
 	}
 	
 	reflex gototarget when: (pointl!=nil){
+		distance<-distance+1;
+		write "Distance traveled so far - " +distance;
 		do goto target:pointl;
-		write guestName+ " on the way";
-		
-		write guestName+ " my small food brain " +foodbrain;
-		write guestName+ " my small pub brain " +pubbrain;
-		write guestName+ " my small tavern brain " +tavernbrain;
 		
 		if(location=tavern[0].location or location=tavern[1].location){
-			write 'what would u like to have';
+			write guestName + ': I have reached tavern and drank and eaten. Time to party!';
 			ask tavern{
 				myself.ishungry<-100;
 				myself.isthirsty<-100;
@@ -214,9 +225,8 @@ species guests skills: [moving]{
 				myself.atinfocentre<-false;
 			}
 		}
-		
 		if(location=foodstall[0].location or location=foodstall[1].location){
-			write 'what would u like to have';
+			write guestName + ': I have reached foodstall and eaten. Time to party!';
 			ask foodstall{
 				myself.ishungry<-100;
 				myself.pointl<-nil;
@@ -224,22 +234,15 @@ species guests skills: [moving]{
 			}
 		}
 		if(location=pub[0].location or location=pub[1].location){
-			write 'what would u like to have';
+			write guestName + ': I have reached the pub and drank. Time to party!';
 			ask pub{
 				myself.isthirsty<-100;
 				myself.pointl<-nil;
 				myself.atinfocentre<-false;
 			}
-		}
-		
-		
+		}	
 	}
-		
-	
-	}
-	
-
-
+}
 
 
 species infocentre{
