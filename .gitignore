@@ -1,3 +1,4 @@
+*.project*
 .DS_Store
 .built_in_models_*
 .gama.epf
