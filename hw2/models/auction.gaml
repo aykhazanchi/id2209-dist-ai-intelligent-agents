@@ -13,6 +13,7 @@ model auction
 global{
 	int numParticipants <- 3;
 	int numInitiator <- 1;
+	bool bidResults <- [];
 	
 	init{
 		
@@ -24,7 +25,6 @@ global{
 		
 		// Set minPrice to 20% of price
 		Initiator[0].minPrice <- ((0.2*Initiator[0].price) as int);
-		
 		
 		/********** Participant code **********/
 		create Participants[] number: numParticipants;
@@ -48,6 +48,7 @@ species Initiator skills: [fipa]{
 	
 	int price;
 	int minPrice;
+	bool resultFromParticipant;
 	
 	reflex send_request when :(time=1){
 		
@@ -62,9 +63,22 @@ species Initiator skills: [fipa]{
 		}
 	}
 	
+	
 	reflex read_agree_message when: (!(empty(agrees))) {
 		loop a over:agrees {
-			write 'Merch sold!: '+ string(a.contents);
+			
+			// Get result of bid out of contents
+			loop r over: a.contents {
+				resultFromParticipant <- (r as bool);
+			}
+			if (resultFromParticipant) {
+				// Bid successful
+				write 'Merch sold!: '+ string(a.contents) + ' bool value: ' + resultFromParticipant;	
+			}
+			else {
+				// Bid out of range for participant
+				write 'Bid failed for: '+ string(a.contents) + ' bool value: ' + resultFromParticipant;
+			}
 		}
 	}
 	
@@ -73,8 +87,9 @@ species Initiator skills: [fipa]{
 			write 'Failed: ' + string(f.contents);
 		}
 	}
-/**	
-	reflex read_message when: (!(empty(agrees)) and !(empty(failures))) {
+
+ /*
+	reflex read_message when: (!(empty(agrees)) or !(empty(failures))) {
 		
 		if (empty(agrees) and !empty(failures)) {
 			// All have failed
@@ -101,7 +116,7 @@ species Initiator skills: [fipa]{
 			}
 		}
 	}
- */
+  */
 	aspect base{
 		draw square(7)  color: #orange;
 	}
@@ -111,6 +126,7 @@ species Participants skills:[fipa]{
 	
 	string name;
 	int maxPrice;
+	bool result;
 	
 	aspect base {
 		draw circle(1) color: #green;
@@ -130,10 +146,12 @@ species Participants skills:[fipa]{
 		
 		
 		if(auctionPrice <= maxPrice) {
-			do agree with: (message: requestFromInitiator,contents: [name + ' will buy at ' + auctionPrice]);	
+			result <- true;
+			do agree with: (message: requestFromInitiator,contents: [name + ' will buy at ' + auctionPrice, result]);	
 		}
 		else {			
-			do failure (message: requestFromInitiator,contents: ['' + auctionPrice + ' is too high for ' + name]);	
+			result <- false;
+			do agree with: (message: requestFromInitiator,contents: ['' + auctionPrice + ' is too high for ' + name, result]);	
 		}
 		
 	}
