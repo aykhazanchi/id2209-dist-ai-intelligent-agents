@@ -1,32 +1,33 @@
 /**
-* Name: auction
+* Name: dutch
 * Based on the internal empty template. 
 * Author: vasigarans and aykhazanchi
 * Tags: 
 */
 
+//// TODO: Add inform (that auction is starting), participants respond with "ok"
 
-model auction
+model dutch
 
 /* Insert your model definition here */
 
 global{
 	int numParticipants <- 3;
-	int numInitiator <- 1;
+	int numAuctioneer <- 1;
 	list<bool> bidResults <- list_with(numParticipants, false);
 	bool run_auction <- true;
 	
 	init{
 		
 		/********** Initiator code **********/
-		create Initiator number: numInitiator with:(location:point(15,15));
+		create Auctioneer number: numAuctioneer with:(location:point(15,15));
 		
 		// Set random start price for auction
-		Initiator[0].price <- rnd(0, 100);
+		Auctioneer[0].price <- rnd(0, 300);
 		
 		// Set minPrice to 20% of price
-		Initiator[0].minPrice <- ((0.2*(Initiator[0].price as int)) as int);
-				
+		Auctioneer[0].minPrice <- ((0.2*(Auctioneer[0].price as int)) as int);
+		
 		/********** Participant code **********/
 		create Participants[] number: numParticipants;
 		int i<-0;
@@ -48,7 +49,7 @@ global{
 	
 
 
-species Initiator skills: [fipa]{
+species Auctioneer skills: [fipa]{
 	
 	int price;
 	int minPrice;
@@ -58,6 +59,11 @@ species Initiator skills: [fipa]{
 	
 	reflex send_request when :(run_auction = true){
 		
+		write '';
+		write '';
+		write '';
+		write 'value of proposals from any previous bid --- ' + bidResults;
+		
 		if (reduce_price = true) {
 			price <- price - 5;
 			reduce_price <- false;
@@ -66,34 +72,41 @@ species Initiator skills: [fipa]{
 			price <- price + 7;
 			increase_price <- false;
 		}
-		
+
 		write 'price set at ---> ' + price;
 		write 'minPrice set at ---> ' + minPrice;
-		
-		write 'starting auction';
-		
+				
 		// Check price is above or equal to minPrice, start auction
 		if (price >= minPrice) {
 			write 'auction starting from send_request reflex';
+			write ' -------------------------------------------- ';
 			run_auction <- false;
 			do start_conversation (to::list(Participants),protocol::'fipa-contract-net',performative::'cfp',contents::[price]);
+		} 
+		else if (price < minPrice) {
+			write 'Minimum selling price has been reached without any successful bids. Auction has ended, unfortunately.';
 		}
 	}
 	
 	
 	reflex read_proposal_message when: (!(empty(proposes))) {
-		
+			
 		loop a over:proposes {
 			int totalTrues <- 0;
-			loop r over: a.contents {
-				resultFromParticipant <- (r as bool);
-				if (resultFromParticipant) {
-					totalTrues <- totalTrues + 1;
+			
+			if(bidResults contains true) {
+				loop bid_result over: bidResults {
+					if (bid_result) {
+						totalTrues <- totalTrues + 1;
+					}
 				}
 			}
 			if (totalTrues = 1) {
-				write 'winner is there';
+				// Get which index is true, that is also index of Participant
+				int index <- bidResults index_of true;
+				write 'Participant ' + index + ' is winner! with bid of ' + price;
 				run_auction <- false;
+				totalTrues<-nil;
 			}
 			else if (totalTrues < 1) {
 				reduce_price <- true;
@@ -103,49 +116,6 @@ species Initiator skills: [fipa]{
 				increase_price <- true;
 				run_auction <- true;
 			}
-			/*
-			if(bidResults contains true) {
-				//int totalTrues <- 0;
-				loop bidResult over: bidResults {
-					if (bidResult) {
-						totalTrues <- totalTrues + 1;
-					}
-				}
-				if (totalTrues > 1) {
-					// Means more than one participant agreed to buy
-					// increase price, start auction again
-					price <- price + 7;
-					write 'auction starting from read_proposal_message totalTrues>1 reflex';
-					run_auction <- true;
-					
-					// do start_conversation (to::list(Participants),protocol::'fipa-contract-net',performative::'cfp',contents::[price]);
-				}
-				else {
-					// Here totalTrues = 1, identify winner based on location of true
-					int winner <- bidResults index_of true;
-					write 'Winner of auction with selling price of ' + price + ' is ' + Participants[winner].name;		
-				}
-			}
-			else {
-				// Means no one agreed to buy
-				// reduce price, start auction again
-				loop r over: a.contents {
-					resultFromParticipant <- (r as bool);
-				}
-				if (!resultFromParticipant) {
-					write 'Bid failed for: '+ string(a.contents) + ' bool value: ' + resultFromParticipant;
-					price <- price - 5;
-					if (price >= minPrice) {
-						write 'auction starting from read_proposal_message totalTrues=0 reflex';
-						run_auction <- true;
-						// do start_conversation (to::list(Participants),protocol::'fipa-contract-net',performative::'cfp',contents::[price]); 
-					}			
-				}
-				else if (price < minPrice) {
-					write 'Minimum selling threshold reached, auction over without a sale...';
-				}
-			}
-			*/
 		}
 	}
 
@@ -168,6 +138,7 @@ species Participants skills:[fipa]{
 	reflex reply_messages when:(!empty(cfps)){
 		message proposalFromInitiator<-(cfps at 0);
 		int auctionPrice;
+
 		write 'maxPrice for ' + name + ' set to --- ' + maxPrice;
 		
 		// Pull out price from contents list. Only works this way for some reason.
@@ -181,17 +152,14 @@ species Participants skills:[fipa]{
 		if(auctionPrice <= maxPrice) {
 			result <- true;
 			bidResults[index] <- true;
-			do propose with: (message: proposalFromInitiator,contents: [name + ' will buy at ' + auctionPrice, result]);	
+			do propose with: (message: proposalFromInitiator,contents: [result]);	
 		}
 		else if (auctionPrice > maxPrice) {			
 			result <- false;
 			bidResults[index] <- false;
-			do propose with: (message: proposalFromInitiator,contents: ['' + auctionPrice + ' is too high for ' + name, result]);	
-		}
-		write 'value of bidResults --- ' + bidResults;
+			do propose with: (message: proposalFromInitiator,contents: [result]);	
+		}		
 	}
-
-
 }
 
 
@@ -208,7 +176,7 @@ experiment name type: gui {
 	
 	output {
 		display mydisplay{
-			species Initiator aspect:base;
+			species Auctioneer aspect:base;
 			species Participants aspect:base;
 		}
 	// Define inspectors, browsers and displays here
