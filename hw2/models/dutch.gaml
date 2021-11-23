@@ -78,7 +78,7 @@ species Auctioneer skills: [fipa]{
 				
 		// Check price is above or equal to minPrice, start auction
 		if (price >= minPrice) {
-			write 'auction starting from send_request reflex';
+			write 'New Dutch auction starting from send_request reflex';
 			write ' -------------------------------------------- ';
 			run_auction <- false;
 			do start_conversation (to::list(Participants),protocol::'fipa-contract-net',performative::'cfp',contents::[price]);

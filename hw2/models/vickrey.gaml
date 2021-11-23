@@ -1,17 +1,17 @@
 /**
-* Name: sealedBid
+* Name: vickrey
 * Based on the internal empty template. 
 * Author: vasigarans and aykhazanchi
 * Tags: 
 */
 
 
-model sealedBid
+model vickrey
 
 /* Insert your model definition here */
 
 global{
-	int numParticipants <- 10;
+	int numParticipants <- 5;
 	int numAuctioneer <- 1;
 	list<int> bids <- list_with(numParticipants, -1);
 	
@@ -40,13 +40,14 @@ species Auctioneer skills: [fipa]{
 	
 	int max;
 	int bidIndex <- -1;
+	int finalPrice <- -1; // in Vickrey auction, the final price to pay is the second-highest bid price
 	
 	reflex send_request {
 		
 		write '';
 		write '';
 		write '';
-		write 'New Sealed Bid auction starting from send_request reflex';
+		write 'New Vickrey auction starting from send_request reflex';
 		write 'Please submit your bids';
 		write ' -------------------------------------------- ';
 		do start_conversation (to::list(Participants),protocol::'fipa-contract-net',performative::'cfp',contents::['Auction has started, please send your bids...']);
@@ -57,8 +58,15 @@ species Auctioneer skills: [fipa]{
 			
 		loop a over:proposes {
 			loop bid over: bids {
+				// Get the winning bid
 				if (bid > max) {
 					max <- bid;
+				}
+			}
+			loop bid over: bids {
+				// Use winning bid to find second-highest bid, this is the finalPrice
+				if (bid > finalPrice and bid != max) {
+					finalPrice <- bid;
 				}
 			}
 		}
@@ -70,8 +78,9 @@ species Auctioneer skills: [fipa]{
 	// declare winner only when bidIndex value has been changed from default of -1
 	reflex declare_winner when: (bidIndex != -1){
 		
-		write 'winning bid is ' + max;
-		write 'winner is Participant ' + bidIndex;
+		write 'Winning bid is ' + max;
+		write 'Final price to pay is ' + finalPrice;
+		write 'Winner is Participant ' + bidIndex;
 	}
 	
 	aspect base{
