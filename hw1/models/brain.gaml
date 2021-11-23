@@ -12,7 +12,7 @@ model brain
 
 global {
 	
-	int noguests<-3;
+	int noguests<-20;
 	
 	init {
 		create infocentre;
