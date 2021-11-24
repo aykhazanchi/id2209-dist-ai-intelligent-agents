@@ -7,7 +7,7 @@
 
 //// TODO: Add inform (that auction is starting), participants respond with "ok"
 
-model dutch
+model english
 
 /* Insert your model definition here */
 
@@ -23,10 +23,10 @@ global{
 		create Auctioneer number: numAuctioneer with:(location:point(15,15));
 		
 		// Set random start price for auction
-		Auctioneer[0].price <- rnd(0, 300);
+		Auctioneer[0].price <- 0;
 		
 		// Set minPrice to 20% of price
-		Auctioneer[0].minPrice <- ((0.2*(Auctioneer[0].price as int)) as int);
+		//Auctioneer[0].minPrice <- ((0.2*(Auctioneer[0].price as int)) as int);
 		
 		/********** Participant code **********/
 		create Participants[] number: numParticipants;
@@ -52,7 +52,7 @@ global{
 species Auctioneer skills: [fipa]{
 	
 	int price;
-	int minPrice;
+	//int minPrice;
 	bool increase_price <- false;
 	bool reduce_price <- false;
 	bool resultFromParticipant;
@@ -64,28 +64,22 @@ species Auctioneer skills: [fipa]{
 		write '';
 		write 'value of proposals from any previous bid --- ' + bidResults;
 		
-		if (reduce_price = true) {
-			price <- price - 5;
-			reduce_price <- false;
-		}
-		else if (increase_price = true) {
-			price <- price + 7;
+		 if (increase_price = true) {
+			price <- price + 1;
 			increase_price <- false;
 		}
 
 		write 'price set at ---> ' + price;
-		write 'minPrice set at ---> ' + minPrice;
+		//write 'minPrice set at ---> ' + minPrice;
 				
 		// Check price is above or equal to minPrice, start auction
-		if (price >= minPrice) {
-			write 'New Dutch auction starting from send_request reflex';
+		if (price >=0) {
+			write 'New English auction starting from send_request reflex';
 			write ' -------------------------------------------- ';
 			run_auction <- false;
 			do start_conversation (to::list(Participants),protocol::'fipa-contract-net',performative::'cfp',contents::[price]);
 		} 
-		else if (price < minPrice) {
-			write 'Minimum selling price has been reached without any successful bids. Auction has ended, unfortunately.';
-		}
+		
 	}
 	
 	
@@ -108,10 +102,7 @@ species Auctioneer skills: [fipa]{
 				run_auction <- false;
 				totalTrues<-nil;
 			}
-			else if (totalTrues < 1) {
-				reduce_price <- true;
-				run_auction <- true;
-			}
+			
 			else if (totalTrues > 1) {
 				increase_price <- true;
 				run_auction <- true;
@@ -135,7 +126,7 @@ species Participants skills:[fipa]{
 		draw circle(1) color: #green;
 	}
 		
-	reflex reply_messages when:(!empty(cfps)){
+	reflex s when:(!empty(cfps)){
 		message proposalFromInitiator<-(cfps at 0);
 		int auctionPrice;
 
@@ -148,13 +139,15 @@ species Participants skills:[fipa]{
 		
 		write 'Auction price currently at --- ' + auctionPrice;
 		write ' -------------------------------------------- ';
-		
+		//write 'auctionPrice '+auctionPrice+' maxPrice'+maxPrice;
 		if(auctionPrice <= maxPrice) {
 			result <- true;
 			bidResults[index] <- true;
 			do propose with: (message: proposalFromInitiator,contents: [result]);	
 		}
-		else if (auctionPrice > maxPrice) {			
+		
+		else if (auctionPrice > maxPrice) {	
+			write 'here';		
 			result <- false;
 			bidResults[index] <- false;
 			do propose with: (message: proposalFromInitiator,contents: [result]);	
