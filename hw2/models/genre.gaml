@@ -1,5 +1,5 @@
 /**
-* Name: dutch
+* Name: genre
 * Based on the internal empty template. 
 * Author: vasigarans and aykhazanchi
 * Tags: 
@@ -7,27 +7,42 @@
 
 //// TODO: Add inform (that auction is starting), participants respond with "ok"
 
-model dutch
+model genre
 
 /* Insert your model definition here */
 
 global{
 	int numParticipants <- 3;
-	int numAuctioneer <- 1;
 	list<bool> bidResults <- list_with(numParticipants, false);
 	bool run_auction <- true;
 	
 	init{
 		
 		/********** Initiator code **********/
-		create Auctioneer number: numAuctioneer with:(location:point(15,15));
+		int u<-0;
+		list<point> p<-[{15,15},{10,10}];
 		
-		// Set random start price for auction
-		Auctioneer[0].price <- rnd(0, 300);
-		
-		// Set minPrice to 20% of price
-		Auctioneer[0].minPrice <- ((0.2*(Auctioneer[0].price as int)) as int);
-		
+		create Auctioneer  with:(location:point(15,15)){
+			genre<-'clothes';
+			price <- rnd(0, 300);
+			minPrice <- ((0.2*(Auctioneer[0].price as int)) as int);
+		}	
+		create Auctioneer  with:(location:point(30,30)){
+			genre<-'CD';
+			price <- rnd(0, 300);
+			minPrice <- ((0.2*(Auctioneer[0].price as int)) as int);
+		}
+		create Auctioneer  with:(location:point(40,40)){
+			genre<-'painting';
+			price <- rnd(0, 300);
+			minPrice <- ((0.2*(Auctioneer[0].price as int)) as int);
+		}
+		create Auctioneer  with:(location:point(55,55)){
+			genre<-'sculpture';
+			price <- rnd(0, 300);
+			minPrice <- ((0.2*(Auctioneer[0].price as int)) as int);
+		}
+
 		/********** Participant code **********/
 		create Participants[] number: numParticipants;
 		int i<-0;
@@ -41,6 +56,15 @@ global{
 			// Set maxPrice randomly for each participant at init
 			participant.maxPrice <- rnd(0, 100);
 			
+			// Randomly select genre from list
+			list<string> genre <- ['clothes', 'CD', 'painting', 'sculpture'];
+			
+			// Find random genre from list above
+			int pickIndex <- rnd(0, length(genre)-1);	// should be value of
+			 
+			// Set genre randomly for each participant at init
+			participant.pGenre <- genre[pickIndex];
+			
 			// Increase counter for next participant
 			i<-i+1;			
 		}
@@ -51,6 +75,7 @@ global{
 
 species Auctioneer skills: [fipa]{
 	
+	string genre;
 	int price;
 	int minPrice;
 	bool increase_price <- false;
@@ -78,10 +103,10 @@ species Auctioneer skills: [fipa]{
 				
 		// Check price is above or equal to minPrice, start auction
 		if (price >= minPrice) {
-			write 'New Dutch auction starting from send_request reflex';
+			write 'New ' + genre + ' auction starting from ' + name;
 			write ' -------------------------------------------- ';
 			run_auction <- false;
-			do start_conversation (to::list(Participants),protocol::'fipa-contract-net',performative::'cfp',contents::[price]);
+			do start_conversation (to::list(Participants),protocol::'fipa-contract-net',performative::'cfp',contents::[price, genre]);
 		} 
 		else if (price < minPrice) {
 			write 'Minimum selling price has been reached without any successful bids. Auction has ended, unfortunately.';
@@ -126,6 +151,7 @@ species Auctioneer skills: [fipa]{
 
 species Participants skills:[fipa]{
 	
+	string pGenre;
 	string name;
 	int maxPrice;
 	bool result;
@@ -138,27 +164,50 @@ species Participants skills:[fipa]{
 	reflex reply_messages when:(!empty(cfps)){
 		message proposalFromInitiator<-(cfps at 0);
 		int auctionPrice;
-
+		string auctionGenre;
+		
 		write 'maxPrice for ' + name + ' set to --- ' + maxPrice;
+		
+		// hack to make it a sort of 'for' loop
+		int counter <- 0;
 		
 		// Pull out price from contents list. Only works this way for some reason.
 		loop i over: container(proposalFromInitiator.contents) {
-			auctionPrice <- (i as int);
+			if (counter = 0) {
+				auctionPrice <- (i as int);	
+			}
+			counter <- counter + 1;
+		}
+
+		// Pull out genre from contents list. Only works this way for some reason.
+		loop i over: container(proposalFromInitiator.contents) {
+			auctionGenre <- (i as string);
 		}
 		
 		write 'Auction price currently at --- ' + auctionPrice;
-		write ' -------------------------------------------- ';
+		write 'Auction genre currently at --- ' + auctionGenre;
+		write 'My genre of interest is currently --- ' + pGenre;
 		
-		if(auctionPrice <= maxPrice) {
-			result <- true;
-			bidResults[index] <- true;
-			do propose with: (message: proposalFromInitiator,contents: [result]);	
+		if (pGenre = auctionGenre) {
+			write 'I am interested in the ' + auctionGenre + ' auction with ' + agent(proposalFromInitiator.sender);
+			write 'Sending my bid...';
+			if(auctionPrice <= maxPrice) {
+				result <- true;
+				bidResults[index] <- true;
+				do propose with: (message: proposalFromInitiator,contents: [result]);	
+			}
+			else if (auctionPrice > maxPrice) {			
+				result <- false;
+				bidResults[index] <- false;
+				do propose with: (message: proposalFromInitiator,contents: [result]);	
+			}
 		}
-		else if (auctionPrice > maxPrice) {			
-			result <- false;
-			bidResults[index] <- false;
-			do propose with: (message: proposalFromInitiator,contents: [result]);	
+		else {
+			write "My interests don't match. Not joining the auction.";
 		}		
+		write ' -------------------------------------------- ';
+		write '';
+		
 	}
 }
 
