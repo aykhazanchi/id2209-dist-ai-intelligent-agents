@@ -66,6 +66,7 @@ species Stage skills: [fipa]{
 		
 		// Send out stage attributes to all guests
 		write 'Concert starting at ' + name + ' with attributes - ';
+		write 'light: ' + lightshow + ' speakers: ' + speakers + ' band:' + band + ' size: ' + size + ' smoke: ' + smoke;
 		write '--------------------------------------------------------';
 		do start_conversation (to::list(Guests),protocol::'fipa-contract-net',performative::'request',contents::[lightshow, speakers, band, size, smoke]);	
 	}
@@ -133,18 +134,23 @@ species Guests skills: [fipa, moving]{
 		loop val over: container(requestFromInitiator.contents) {
 			if (i = 0) {
 				stgLightshow <- (val as float);
+				write 'light: ' + stgLightshow;
 			} 
 			else if (i = 1) {
 				stgSpeakers <- (val as float);
+				write 'speakers: ' + stgSpeakers;
 			}
 			else if (i = 2) {
 				stgBand <- (val as float);
+				write 'band: ' + stgBand;
 			}
 			else if (i = 3) {
 				stgSize <- (val as float);
+				write 'size: ' + stgSize;
 			}
 			else if (i = 4) {
 				stgSmoke <- (val as float);
+				write 'smoke: ' + stgSmoke;
 			}
 			i <- i + 1;
 		}
