@@ -179,6 +179,8 @@ species Guests skills: [fipa, moving]{
 		
 	// Whenever not attending concert, just wander around
 	reflex wander when:(!attendingConcert) {
+		agentColor <- #black;
+		color <- agentColor;
 		do goto target:{25,25};	
 		do wander speed: 2.0;	
 	}

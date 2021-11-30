@@ -11,7 +11,7 @@ model Queen
 /* Insert your model definition here */
 
 global {
-	int Nsize<-15;
+	int Nsize<-4;
 	bool addQ<-true;
 	int cur_index<-0;
 	int i<-100;
@@ -28,12 +28,13 @@ global {
 	//int temp_y;
 	int nil_x_index<-0;
 	int nil_y_index<-rnd(0,Nsize-1);
-	add nil_x_index to: rowlist;
-	add nil_y_index to: collist;
-	//add nil_x_index::nil_y_index to: var;
-	add {nil_x_index,nil_y_index} to:var;
+	
 	
 	loop counter from:0 to:Nsize-1{
+		if(Nsize=4)
+		{
+		nil_y_index<-1;
+		}
 		
 		create queen {
 			x_index<-nil_x_index;
@@ -49,6 +50,11 @@ global {
 	 		
 			
 		}
+		add nil_x_index to: rowlist;
+	add nil_y_index to: collist;
+	
+	//add nil_x_index::nil_y_index to: var;
+	add {nil_x_index,nil_y_index} to:var;
 		
 		write('index 0'+ 'at '+{nil_x_index,nil_y_index});
 		add {nil_x_index,nil_y_index} to:queen[0].mem;
@@ -94,6 +100,7 @@ species queen skills: [fipa]{
 		
 		}
 		*/
+		
 		
 		if(length(queenlist) = Nsize ){
 			queen[0].talktosuc<-true;
@@ -421,9 +428,9 @@ species queen skills: [fipa]{
 		//write(x_index);
 	 	//write(y_index);
 	 	
-		//draw circle(0.3*100/Nsize) color: 'black' at: MyGrid[x_index,y_index];
-		image_file paofc <- image_file('https://upload.wikimedia.org/wikipedia/en/5/5f/Original_Doge_meme.jpg');
-		draw paofc size: 9 at: MyGrid[x_index,y_index];
+		draw circle(0.3*100/Nsize) color: 'black' at: MyGrid[x_index,y_index];
+		//image_file paofc <- image_file('https://upload.wikimedia.org/wikipedia/en/5/5f/Original_Doge_meme.jpg');
+		//draw paofc size: 9 at: MyGrid[x_index,y_index];
 		}
 		
 		
