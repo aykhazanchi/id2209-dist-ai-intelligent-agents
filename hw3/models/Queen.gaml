@@ -11,7 +11,7 @@ model Queen
 /* Insert your model definition here */
 
 global {
-	int Nsize<-4;
+	int Nsize<-15;
 	bool addQ<-true;
 	int cur_index<-0;
 	int i<-100;
@@ -428,7 +428,7 @@ species queen skills: [fipa]{
 		//write(x_index);
 	 	//write(y_index);
 	 	
-		draw circle(0.3*100/Nsize) color: 'black' at: MyGrid[x_index,y_index];
+		draw circle(0.3*100/Nsize) color: #purple at: MyGrid[x_index,y_index];
 		//image_file paofc <- image_file('https://upload.wikimedia.org/wikipedia/en/5/5f/Original_Doge_meme.jpg');
 		//draw paofc size: 9 at: MyGrid[x_index,y_index];
 		}
