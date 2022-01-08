@@ -1,5 +1,2 @@
-Final Project
+Code written during the course offering of ID2209 - Distributed AI and Intelligent Agents at KTH, Royal Institute of Technology. The programming language used in the class is [GAML](). The code here is written as group work in collaboration with [vasigarans](https://github.com/VasigaranS)
 
-This project simulates different agents of each specie type meeting and interacting through their "personalities" which, in turn, affects their "mood". It uses FIPA communication protocol. Additionally, an overall average global mood is observed for the simulation. The `Project_Report.pdf` goes over the implementation and experimentation details.
-
-This was done as part of the final project for ID2209 - Distributed Artificial Intelligence and Intelligent Agents at KTH Royal Institute of Technology.
